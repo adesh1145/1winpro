@@ -1,0 +1,12 @@
+{
+
+"port":"12053/slots",
+
+"host":"15.207.99.117",
+"prefix":"http://",
+
+"host_ws":"15.207.99.117",
+"prefix_ws":"ws://",
+
+"ssl":false
+}

@@ -1,0 +1,117 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: app
+    environment:
+    #   - APP_ENV=development
+    #   - APP_DEBUG=true
+    #   - APP_KEY=${APP_KEY} # Make sure to define this in your .env
+    #   - DB_HOST=mysql
+    #   - DB_PORT=3306
+    #   - DB_DATABASE=laravel
+    #   - DB_USERNAME=root
+    #   - DB_PASSWORD=rootpassword
+    #   - REDIS_HOST=redis
+    #   - REDIS_PASSWORD=null
+    #   - REDIS_PORT=6379
+      - UPLOAD_MAX_FILESIZE=100M
+      - POST_MAX_SIZE=100M
+      - MAX_EXECUTION_TIME=300
+      - MAX_INPUT_TIME=300
+      - MEMORY_LIMIT=256M
+      - SESSION_SAVE_PATH="/tmp"
+    ports:
+      - "80:80" # Map container's port 80 to localhost:8080
+      - "443:443" # Map container's port 443 to localhost:443
+      - "12087:12087"
+      - "12053:12053"
+      - "12096:12096"
+    volumes:
+      - .:/var/www/html
+      - ./php.ini:/usr/local/etc/php/conf.d/php.ini
+      - ./apache-config.conf:/etc/apache2/sites-available/000-default.conf
+      - ./PTWebSocket/ssl/crt.crt:/etc/ssl/certs/crt.crt
+      - ./PTWebSocket/ssl/key.key:/etc/ssl/private/key.key
+    networks:
+      - app-network
+    depends_on:
+      - mysql
+      - redis
+      
+    restart: always
+    command: /bin/bash -c "chmod 644 /etc/ssl/certs/crt.crt && chmod 600 /etc/ssl/private/key.key && chown -R www-data:www-data /var/www/html/storage && chown -R www-data:www-data /var/www/html/bootstrap/cache && apache2-foreground"
+
+  mysql:
+    image: mysql:5.7
+    container_name: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: laravel
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - app-network
+    ports:
+      - "3306:3306"
+    restart: always
+
+  redis:
+    image: redis:alpine
+    container_name: redis-server
+    networks:
+      - app-network
+    ports:
+      - "6379:6379"
+    restart: always
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: phpmyadmin
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+      MYSQL_ROOT_PASSWORD: rootpassword
+    ports:
+      - "8081:80"
+    volumes:
+      - ./phpmyadmin.ini:/usr/local/etc/php/conf.d/phpmyadmin.ini
+    networks:
+      - app-network
+    restart: always
+
+#   pm2:
+#     image: node:16
+#     container_name: pm2
+#     working_dir: /usr/src/app
+#     volumes:
+#       - .:/usr/src/app                # Root directory ko container ke /usr/src/app me mount karo
+#       - ./PTWebSocket:/usr/src/app/PTWebSocket # PTWebSocket scripts ko proper path pe mount karo
+#     networks:
+#       - app-network
+#     command: /bin/bash -c "npm install && npm install -g pm2 && npm install mysql2 && pm2 start PTWebSocket/Arcade.js --watch && pm2 start PTWebSocket/Server.js --watch && pm2 start PTWebSocket/Slots.js --watch"
+#     restart: always
+#   pm2:
+#     image: node:16
+#     container_name: pm2
+#     working_dir: /usr/src/app
+#     volumes:
+#       - .:/usr/src/app   # Project ke root ko container ke /usr/src/app mein mount karna
+#       - ./PTWebSocket:/usr/src/app/PTWebSocket   # PTWebSocket ko proper path pe mount karna
+     
+#     networks:
+#       - app-network
+#     command: /bin/bash -c "npm install -g pm2 && npm install mysql2 && pm2 start PTWebSocket/Arcade.js --watch && pm2 start PTWebSocket/Server.js --watch && pm2 start PTWebSocket/Slots.js --watch"
+#     restart: always
+
+
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  mysql_data:
