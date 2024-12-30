@@ -8,9 +8,8 @@ var fs = require('fs');
 var serverConfig;
 var Redis = require('ioredis');
 var redis = new Redis();
-
-serverConfig = JSON.parse(fs.readFileSync('public/socket_config.json', 'utf8'));
-	
+var serverConfig = JSON.parse(fs.readFileSync(path.join(__dirname, '../public/socket_config.json'), 'utf8'));
+// serverConfig = JSON.parse(fs.readFileSync('public/socket_config.json', 'utf8'));
 
 /*----------------------------*/
 function shuffle(array) {
@@ -33,17 +32,15 @@ function shuffle(array) {
 }
 
 
-function RandomInt(min, max)
-{
+function RandomInt(min, max) {
 
   return Math.floor(Math.random() * (max - min + 1)) + min;
 
 };
 
-function RandomFloat()
-{
+function RandomFloat() {
 
-  return Math.random()*(RandomInt(-1,1)+Math.random());
+  return Math.random() * (RandomInt(-1, 1) + Math.random());
 
 };
 
@@ -71,19 +68,19 @@ function DecodeMessage(arrayBuffer) {
       result += String.fromCharCode(c);
       i++;
     } else if (c > 191 && c < 224) {
-      if( i+1 >= data.length ) {
-      //throw "UTF-8 Decode failed. Two byte character was truncated.";
+      if (i + 1 >= data.length) {
+        //throw "UTF-8 Decode failed. Two byte character was truncated.";
       }
-      c2 = data[i+1];
-      result += String.fromCharCode( ((c&31)<<6) | (c2&63) );
+      c2 = data[i + 1];
+      result += String.fromCharCode(((c & 31) << 6) | (c2 & 63));
       i += 2;
     } else {
-      if (i+2 >= data.length) {
-      //  throw "UTF-8 Decode failed. Multi byte character was truncated.";
+      if (i + 2 >= data.length) {
+        //  throw "UTF-8 Decode failed. Multi byte character was truncated.";
       }
-      c2 = data[i+1];
-      c3 = data[i+2];
-      result += String.fromCharCode( ((c&15)<<12) | ((c2&63)<<6) | (c3&63) );
+      c2 = data[i + 1];
+      c3 = data[i + 2];
+      result += String.fromCharCode(((c & 15) << 12) | ((c2 & 63) << 6) | (c3 & 63));
       i += 3;
     }
   }
@@ -113,23 +110,23 @@ function EncodeMessage(str) {
 
 
 
-if(serverConfig.ssl){
-		const sslDir = path.resolve(__dirname, './ssl');
-	const keyPath = path.join(sslDir, 'key.key');
-const certPath = path.join(sslDir, 'crt.crt');
-var privateKey = fs.readFileSync(keyPath, 'utf8');
-var certificate = fs.readFileSync(certPath, 'utf8');
+if (serverConfig.ssl) {
+  const sslDir = path.resolve(__dirname, './ssl');
+  const keyPath = path.join(sslDir, 'key.key');
+  const certPath = path.join(sslDir, 'crt.crt');
+  var privateKey = fs.readFileSync(keyPath, 'utf8');
+  var certificate = fs.readFileSync(certPath, 'utf8');
 
-var credentials = { key: privateKey, cert: certificate };
-var https = require('https');
-
-
-var server  = https.createServer(credentials);
+  var credentials = { key: privateKey, cert: certificate };
+  var https = require('https');
 
 
-}else{
+  var server = https.createServer(credentials);
 
-var  server = http.createServer();
+
+} else {
+
+  var server = http.createServer();
 
 
 }
@@ -141,8 +138,8 @@ const wss3 = new WebSocket.Server({ noServer: true });
 
 
 
-var  wsClients=[];
-var  wsClientsId=0;
+var wsClients = [];
+var wsClientsId = 0;
 
 
 
@@ -156,118 +153,118 @@ var  wsClientsId=0;
 wss1.on('connection', function connection(ws) {
 
 
- ws.on('message', function incoming(message) {
-	  
+  ws.on('message', function incoming(message) {
 
-    
+
+
     /*------------------------*/
-    
-  
-    
-  
-var request = require('request');
-
-var gameName='';
-
-if(message.split(":::")[1]!=undefined){
-try{	
-var param=JSON.parse(message.split(":::")[1]);
-}catch(e){
-return;
-}
-
-
-/*---------CQ---------*/
-
-if(param.vals!=undefined){
-
-	
-if(param.irq!=undefined){
-ws.send('~m~67~m~~j~{"err":0,"irs":1,"vals":[1,-2147483648,2,-503893983],"msg":null}');	
-
-return;	
-}	
-
-
-param=param.vals[0];
-
-	
-}
-
-/*-----------------------*/
 
 
 
-var ck=param.cookie;
-var sessionId=param.sessionId;
-param.cookie='';
 
-gameName=param.gameName;
-}else{
-var param={};	
-var ck='';	
-}
+    var request = require('request');
 
-var gameURL= serverConfig.prefix+serverConfig.host+'/game/'+gameName+'/server?&sessionId='+sessionId;
+    var gameName = '';
 
-
-if(gameName==undefined){
-	console.log(param);
-	return;
-}
+    if (message.split(":::")[1] != undefined) {
+      try {
+        var param = JSON.parse(message.split(":::")[1]);
+      } catch (e) {
+        return;
+      }
 
 
-var paramStr=JSON.stringify(param);
+      /*---------CQ---------*/
 
-var options = {
-  method: 'post',
-  body: param, 
-  json: true, 
-  rejectUnauthorized: false,
-  requestCert: false,
-  agent: false,
-  url: gameURL,
-  headers: {
-	'Connection': 'keep-alive',
-	"Content-Type": "application/json",
-	'Content-Length': paramStr.length,
-    'Cookie': ck
-  }
-}
+      if (param.vals != undefined) {
 
-request(options, function (err, res, body) {
-  if (err) {
-    console.log('Error :', err)
-    return
-  }
 
-  if(body!=undefined){
-	  
-	try{  
-	  
-  var allReq=body.toString().split("------");
-  
-}catch(e){
-	
-   console.log('Error :', e)
-return;	
-}
+        if (param.irq != undefined) {
+          ws.send('~m~67~m~~j~{"err":0,"irs":1,"vals":[1,-2147483648,2,-503893983],"msg":null}');
 
-  for(var i=0;i<allReq.length;i++){
-	  
+          return;
+        }
 
-	  
-	ws.send(allReq[i]);  
-	  
-  }
-  
-}
 
-});
-    
+        param = param.vals[0];
+
+
+      }
+
+      /*-----------------------*/
+
+
+
+      var ck = param.cookie;
+      var sessionId = param.sessionId;
+      param.cookie = '';
+
+      gameName = param.gameName;
+    } else {
+      var param = {};
+      var ck = '';
+    }
+
+    var gameURL = serverConfig.prefix + serverConfig.host + '/game/' + gameName + '/server?&sessionId=' + sessionId;
+
+
+    if (gameName == undefined) {
+      console.log(param);
+      return;
+    }
+
+
+    var paramStr = JSON.stringify(param);
+
+    var options = {
+      method: 'post',
+      body: param,
+      json: true,
+      rejectUnauthorized: false,
+      requestCert: false,
+      agent: false,
+      url: gameURL,
+      headers: {
+        'Connection': 'keep-alive',
+        "Content-Type": "application/json",
+        'Content-Length': paramStr.length,
+        'Cookie': ck
+      }
+    }
+
+    request(options, function (err, res, body) {
+      if (err) {
+        console.log('Error :', err)
+        return
+      }
+
+      if (body != undefined) {
+
+        try {
+
+          var allReq = body.toString().split("------");
+
+        } catch (e) {
+
+          console.log('Error :', e)
+          return;
+        }
+
+        for (var i = 0; i < allReq.length; i++) {
+
+
+
+          ws.send(allReq[i]);
+
+        }
+
+      }
+
+    });
+
     /*-------------------------*/
-   
-    
+
+
   });
 
   ws.send('1::');
@@ -279,23 +276,23 @@ return;
 
 
 wss3.on('connection', function connection(ws) {
-	
-	
-redis.subscribe('Lives', function(err, count) {
-    console.log('subscribe on Lives');
-});
 
-redis.on('message', function(channel, message) {
+
+  redis.subscribe('Lives', function (err, count) {
+    console.log('subscribe on Lives');
+  });
+
+  redis.on('message', function (channel, message) {
 
     message = JSON.parse(message);
 
 
 
     ws.send(JSON.stringify(message.data));
-});	
-	
-	
-});	
+  });
+
+
+});
 
 server.on('upgrade', function upgrade(request, socket, head) {
   const pathname = url.parse(request.url).pathname;

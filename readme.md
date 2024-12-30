@@ -4,6 +4,7 @@ Add This
 "host_ws":"15.207.99.117",
 
 
+sudo usermod -aG docker ubuntu
 
 docker-compose down
 docker-compose up --build
